@@ -3,3 +3,5 @@ uvicorn
 sqlalchemy
 psycop2-binary
 pydantic
+python-dotenv
+apscheduler

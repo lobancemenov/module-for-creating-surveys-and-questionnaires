@@ -5,6 +5,7 @@ from database import get_db
 from schemas import SurveyCreate, SurveyUpdate, SurveyResponse
 import crud
 
+# ===== Роутер =====
 router = APIRouter(prefix="/surveys", tags=["Опросы"])
 
 # ===== GET /surveys — все опросы =====

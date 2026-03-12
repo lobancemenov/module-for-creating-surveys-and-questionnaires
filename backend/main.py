@@ -1,10 +1,17 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware  # ← ДОБАВИТЬ
+from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
 from routes import router
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ===== Создание таблиц БД =====
+logger.info("📦 Создание таблиц БД...")
 Base.metadata.create_all(bind=engine)
+logger.info("✅ Таблицы созданы")
 
 # ===== Приложение FastAPI =====
 app = FastAPI(
@@ -17,26 +24,40 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",    # Vue/Vite dev server
-        "http://localhost:5173",    # Vite default
+        "http://localhost:3000",
+        "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "*",
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # Разрешить все методы (GET, POST, PUT, DELETE, OPTIONS)
-    allow_headers=["*"],  # Разрешить все заголовки
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ===== Приветствие =====
 @app.get("/")
 async def home():
     return {
-        "message": "Это API для управления опросами. Перейдите на /docs для тестирования.",
+        "message": "Survey API работает!",
         "docs": "/docs",
-        "redoc": "/redoc"
+        "endpoints": "/surveys"
     }
+
+# ===== Health Check =====
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 # ===== Подключение роутов =====
 app.include_router(router)
 
-# ===== Запуск: uvicorn main:app --reload =====
+# ===== Проверка роутов при старте =====
+@app.on_event("startup")
+async def print_routes():
+    logger.info("\n=== ЗАРЕГИСТРИРОВАННЫЕ РОУТЫ ===")
+    for route in app.routes:
+        if hasattr(route, 'methods') and hasattr(route, 'path'):
+            methods = ', '.join(route.methods)
+            logger.info(f"{methods:20} {route.path}")
+    logger.info("=== КОНЕЦ СПИСКА ===\n")
